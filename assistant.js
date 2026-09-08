@@ -14,7 +14,7 @@
 import { BrowserAudioInterface, ConversationAgent, InteractionType } from './vendor/sarvam/sarvam.browser.js';
 import { ensureAssistance, endAssistance } from './cobrowse.js';
 
-const WORKER = 'https://cobrowse.unikernel.ai';
+const WORKER = 'https://cobrowse-do.harshkhandelwal8553.workers.dev';
 
 /* Values from the agent's app-authoring URLs on indus.sarvam.ai. `version` is
    pinned on purpose: Samvaad serves the older committed default when it is
