@@ -106,13 +106,15 @@ function createConnection(token = '') {
 }
 
 export function ensureAssistance() {
-  return (connection || createConnection()).ready;
+  return (connection || createConnection(linkRef)).ready;
 }
 
 export function endAssistance() {
   finish(connection, 'ended_by_user');
 }
 
-if (linkRef) createConnection(linkRef);
+/* Deliberately not connecting here. An assistant's ?cb= link supplies the session
+   reference but does not start assistance: ensureAssistance() picks it up when the
+   customer presses the microphone, so the page never highlights itself unprompted. */
 window.addEventListener('pagehide', endAssistance);
 window.CoBrowse = CoBrowse;
