@@ -202,7 +202,7 @@ function render(route = current) {
 
 function go(route) {
   if (!Object.hasOwn(screens, route)) return;
-  if (dialog.open) dialog.close();
+  if (!dialog.hidden) closeSheet();
   if (window.location.hash === `#${route}`) render(route);
   else window.location.hash = route;
 }
@@ -248,9 +248,12 @@ function toast(text) {
   toastTimer = setTimeout(() => element.classList.remove('visible'), 3500);
 }
 
+function openSheet() { backdrop.hidden = false; dialog.hidden = false; }
+function closeSheet() { backdrop.hidden = true; dialog.hidden = true; }
+
 function sheet(title, html) {
-  dialog.innerHTML = `<div class="sheet-top"><button type="button" class="icon-button" data-action="close-dialog" aria-label="Close">${icon('close')}</button></div><h2 id="dialog-title">${title}</h2>${html}`;
-  if (!dialog.open) { backdrop.hidden = false; dialog.show(); }
+  dialog.innerHTML = `<div class="sheet-panel"><div class="sheet-top"><button type="button" class="icon-button" data-action="close-dialog" aria-label="Close">${icon('close')}</button></div><h2 id="dialog-title">${title}</h2>${html}</div>`;
+  openSheet();
   dialog.querySelectorAll('form').forEach(validate);
 }
 
@@ -363,7 +366,7 @@ document.addEventListener('submit', event => {
     case 'welcome': showOTP('pan'); break;
     case 'otp':
       if (data.otp !== prefillValues.otp) { document.querySelector('#otp-error').textContent = 'Incorrect OTP. Please try again.'; return; }
-      dialog.close(); go(otpNext); break;
+      closeSheet(); go(otpNext); break;
     case 'pan': go('aadhaar'); break;
     case 'aadhaar': showOTP('identity'); break;
     case 'identity': transition('Fetching your details', 'bank'); break;
@@ -377,7 +380,7 @@ document.addEventListener('submit', event => {
     case 'employment': go('delivery'); break;
     case 'delivery': go('terms'); break;
     case 'terms': transition('Processing', 'kyc'); break;
-    case 'schedule': dialog.close(); toast(`Video KYC scheduled for ${data.scheduleDate} at ${data.scheduleTime}.`); break;
+    case 'schedule': closeSheet(); toast(`Video KYC scheduled for ${data.scheduleDate} at ${data.scheduleTime}.`); break;
   }
 });
 
@@ -391,13 +394,13 @@ document.addEventListener('click', async event => {
     case 'help':
       sheet('How can we help?', `<div class="sheet-copy"><p>Apply for a credit card by verifying your mobile number, confirming your details, and completing KYC.</p><p>You can revisit the previous step using the menu in the top-right corner.</p></div>${button('Continue Application', 'close-dialog', { arrow: false })}`); break;
     case 'mitc': sheet('Most Important Terms and Conditions', `<div class="sheet-copy"><p>Joining fee: ₹399. Renewal fee: ₹399. Rewards: 8 points per ₹200 on travel and dining.</p><p>${escape(termsText)}</p></div>${button('I Understand', 'accept-mitc', { arrow: false })}`); break;
-    case 'accept-mitc': data.mitc = true; dialog.close(); render(current); break;
+    case 'accept-mitc': data.mitc = true; closeSheet(); render(current); break;
     case 'card-details': sheet('Yes Bank - RuPay Credit', `<div class="sheet-copy"><p>8 reward points per ₹200 on travel and dining.</p><p>Joining fee: ₹399, waived after a spend of ₹5,000 in the first 30 days.</p><p>Renewal fee: ₹399, waived after a spend of ₹50,000 in the anniversary year.</p></div>${button('Continue', 'close-dialog', { arrow: false })}`); break;
-    case 'close-dialog': dialog.close(); break;
+    case 'close-dialog': closeSheet(); break;
     case 'back': go(current.startsWith('bank-') ? 'bank' : journey[Math.max(0, journey.indexOf(current) - 1)]); break;
     case 'restart':
       sheet('Start a new application?', `<p class="subtitle">This will clear the details entered in this application.</p>${button('Start Again', 'confirm-restart', { arrow: false })}${button('Keep My Progress', 'close-dialog', { className: 'ghost', arrow: false })}`); break;
-    case 'confirm-restart': for (const key of Object.keys(data)) delete data[key]; Object.assign(data, { name: 'Vikas Kumar', delivery: 'Residence Address' }); stopCamera(); fileValid = false; dialog.close(); go('welcome'); break;
+    case 'confirm-restart': for (const key of Object.keys(data)) delete data[key]; Object.assign(data, { name: 'Vikas Kumar', delivery: 'Residence Address' }); stopCamera(); fileValid = false; closeSheet(); go('welcome'); break;
     case 'resend': data.otp = ''; dialog.querySelector('input[name=otp]').value = ''; dialog.querySelector('#otp-error').textContent = ''; validate(dialog.querySelector('form')); toast('OTP resent.'); break;
     case 'bank-aa': case 'bank-net': case 'bank-upload': case 'video': case 'complete': go(action); break;
     case 'choose-statement': fileValid = true; document.querySelector('#file-status').textContent = 'bank-statement.pdf · 240 KB · ready'; validate(main.querySelector('form')); break;
@@ -412,11 +415,10 @@ document.addEventListener('click', async event => {
   }
 });
 
-dialog.addEventListener('close', () => { backdrop.hidden = true; });
-backdrop.addEventListener('click', () => dialog.close());
+backdrop.addEventListener('click', closeSheet);
 
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape') { closeMenu(); if (dialog.open) dialog.close(); }
+  if (event.key === 'Escape') { closeMenu(); if (!dialog.hidden) closeSheet(); }
   if (!menu.hidden && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
     event.preventDefault();
     const items = [...menu.querySelectorAll('button')];
