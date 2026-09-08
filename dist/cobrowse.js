@@ -1,81 +1,118 @@
 /**
- * Guided assistance (co-browse).
- *
- * The assistant sees the STRUCTURE of this page — each visible control's label,
- * role, geometry and whether it is filled — and never its contents. It cannot
- * type, click or navigate; it draws a ring around the control the customer needs
- * next, and the customer does the rest.
- *
- * There are two ways a session starts, and the difference matters:
- *
- *   ?cb=<token> in the URL — the assistant sent the customer this link, so the
- *   session already exists and belongs to the tenant that created it. Assistance
- *   offers itself the moment the page loads.
- *
- *   The help button on this page — nobody sent a link, so the page asks the
- *   service for a session of its own. Nothing happens until the customer presses
- *   the button, and consent is still asked for before anything is transmitted.
- *
- * init() never throws and never rejects, so a co-browse outage cannot take the
- * application journey down with it.
- *
- * ?cbEndpoint=http://localhost:8787 points the SDK at a local worker while a
- * journey flow is being recorded. Unset, it uses the managed endpoint.
+ * Guided assistance shares control structure only, after the SDK's consent.
+ * Voice startup waits for onSessionStart, rather than init() resolving.
  */
 import CoBrowse from './vendor/cobrowse/cobrowse.js';
 
 const WORKER = 'https://cobrowse-do.harshkhandelwal8553.workers.dev';
 const SITE = 'acme-credit-card';
-
 const params = new URLSearchParams(window.location.search);
 const endpoint = params.get('cbEndpoint') || undefined;
 const debug = params.get('cbDebug') === '1';
 const linkRef = params.get('cb') || '';
+const endListeners = new Set();
+let connection = null;
 
-let handle = null;
-let code = linkRef.split('_')[0] || '';
+const status = document.createElement('div');
+status.className = 'assist__status';
+status.setAttribute('data-cobrowse-ignore', '');
+status.hidden = true;
+status.innerHTML = '<span role="status">Screen assistance is active</span><button type="button" class="text-link" aria-label="End screen assistance">End</button>';
+document.querySelector('.app-footer').append(status);
+status.querySelector('button').addEventListener('click', () => endAssistance());
 
-// Arriving on an assistant-sent link: start straight away, exactly as before.
-if (linkRef) {
-  handle = CoBrowse.init({ tenant: 'perfios', endpoint, linkParam: 'cb', debug });
-}
-
-/** The six-digit code that names this session, or "" if there isn't one yet. */
 export function assistanceCode() {
-  return code;
+  return connection?.active ? connection.code : '';
 }
 
-/**
- * Make sure a co-browse session exists, and return its code.
- *
- * Called by the help button, so a customer who was never sent a link can still
- * be guided. `POST /api/session` needs no API key — it only creates an empty
- * session bound to a published site, and the visitor still has to consent before
- * one byte of page structure is sent. The API key stays on the server, which is
- * the whole reason this endpoint is separate from the one that mints links.
- */
-export async function ensureAssistance() {
-  if (code) return code;
-  const res = await fetch(`${WORKER}/api/session`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ site: SITE }),
-  });
-  if (!res.ok) throw new Error(`session ${res.status}`);
-  const s = await res.json();
-  code = String(s.key || s.sessionId || '');
-  if (!code) throw new Error('no session code');
-  // A token (rather than a link) is the other thing init() will start on, so
-  // this both creates the session and offers assistance for it.
-  handle = CoBrowse.init({ tenant: 'perfios', endpoint, linkParam: null, sessionToken: code, debug });
-  return code;
+export function onAssistanceEnded(listener) {
+  endListeners.add(listener);
+  return () => endListeners.delete(listener);
 }
 
-/** End assistance along with the call, so the ring does not outlive the agent. */
+function finish(session, reason, message = '') {
+  if (!session || session.finished) return;
+  session.finished = true;
+  clearTimeout(session.timer);
+  session.controller.abort();
+  session.reject(new Error(message || 'Screen assistance ended.'));
+  if (connection === session) {
+    connection = null;
+    status.hidden = true;
+    for (const listener of endListeners) listener(reason);
+  }
+  // init() is asynchronous. Ending before it resolves must still clean up.
+  Promise.resolve(session.handlePromise).then(handle => handle?.end(reason)).catch(() => {});
+}
+
+function createConnection(token = '') {
+  const session = { code: token.split('_')[0], active: false, finished: false, controller: new AbortController() };
+  session.ready = new Promise((resolve, reject) => { session.resolve = resolve; session.reject = reject; });
+  session.ready.catch(() => {}); // Link-started sessions have no voice waiter yet.
+  connection = session;
+  session.timer = setTimeout(() => finish(session, 'timeout', 'Screen assistance timed out. Please try again.'), 60000);
+  void (async () => {
+    try {
+      let sessionToken = token;
+      if (!sessionToken) {
+        const response = await fetch(`${WORKER}/api/session`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ site: SITE }), signal: session.controller.signal,
+        });
+        if (!response.ok) throw new Error(`Screen assistance is unavailable (${response.status}).`);
+        const payload = await response.json();
+        sessionToken = String(payload.key || payload.sessionId || '');
+        if (!sessionToken) throw new Error('The service did not return an assistance session.');
+        session.code = sessionToken.split('_')[0];
+      }
+      if (session.finished) return;
+      session.handlePromise = CoBrowse.init({
+        tenant: 'perfios', endpoint, debug,
+        linkParam: token ? 'cb' : null,
+        ...(token ? {} : { sessionToken }),
+        // The SDK's floating badge would cover the microphone. Its status and
+        // End action live in the reserved footer row instead.
+        ui: { indicator: 'custom' },
+        onSessionStart(info) {
+          if (session.finished) {
+            Promise.resolve(session.handlePromise).then(handle => handle?.end('cancelled'));
+            return;
+          }
+          session.active = true;
+          session.code = String(info?.id || session.code);
+          clearTimeout(session.timer);
+          status.querySelector('span').textContent = 'Screen assistance is active';
+          status.hidden = false;
+          session.resolve(session.code);
+        },
+        onSessionRecovered() {
+          if (!session.finished) status.querySelector('span').textContent = 'Screen assistance is active';
+        },
+        onSessionDegraded() {
+          if (!session.finished) status.querySelector('span').textContent = 'Reconnecting screen assistance…';
+        },
+        onSessionEnd(info) { finish(session, info?.reason || 'ended'); },
+        onError(error) {
+          if (error?.fatal || error?.code === 'consent_declined') finish(session, error.code, error.code === 'consent_declined' ? 'Screen assistance was declined. Tap the microphone to try again.' : 'Could not connect screen assistance. Please try again.');
+        },
+      });
+      const handle = await session.handlePromise;
+      if (session.finished) handle?.end('cancelled');
+    } catch (error) {
+      finish(session, 'failed', error?.name === 'AbortError' ? 'Screen assistance ended.' : String(error?.message || 'Could not connect screen assistance.'));
+    }
+  })();
+  return session;
+}
+
+export function ensureAssistance() {
+  return (connection || createConnection()).ready;
+}
+
 export function endAssistance() {
-  try { handle?.end('agent_ended'); } catch { /* already gone */ }
+  finish(connection, 'ended_by_user');
 }
 
-// Authoring aid: CoBrowse.__scanForTest() prints the labels the assistant would
-// see for the screen currently rendered. It starts nothing and transmits nothing.
+if (linkRef) createConnection(linkRef);
+window.addEventListener('pagehide', endAssistance);
 window.CoBrowse = CoBrowse;

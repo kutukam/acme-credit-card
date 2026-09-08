@@ -1,69 +1,51 @@
 # Acme credit card application
 
-Responsive, interactive frontend based on the supplied Figma section:
-https://www.figma.com/design/56kjTPayHR1LvNxvlGFoDU/Internal---Universal-PCG-Journeys?node-id=6031-31534
+Responsive frontend for the Acme credit-card journey.
 
 ## Run
 
-Serve the `dist` directory with any static HTTP server. No package install or build is required.
+Serve `dist` with any static HTTP server. No package installation or build is needed.
 
 ```bash
 python3 -m http.server 8080 --directory dist
 ```
 
-Open http://localhost:8080 in a browser. Use an HTTP server rather than opening `index.html` directly, because the application uses JavaScript modules.
+Open `http://localhost:8080`. JavaScript modules require HTTP serving rather than opening the file directly.
 
-## Interaction
+## Layout and inputs
 
-Tap an empty text field, date field, or dropdown to fill its prepared value. Existing entered values are preserved and remain editable. The OTP also fills when tapped. Checkboxes and radio choices work normally; tapping the bank-statement area selects the prepared statement. For keyboard use, focus a field and press Enter or Space to fill it.
+- The application fills the viewport. Phones use one column; iPads and laptops use wider forms and multiple columns where the content supports them.
+- The journey scrolls independently of the header and assistance footer. The microphone owns the bottom-right footer cell. Connection errors take a separate row; dialogs stay above the entire footer, including safe-area padding.
+- Every new application starts with empty fields and unselected choices. Focusing, tapping, or pressing a key never inserts sample data. Returning to a previous step preserves only what the visitor entered during this session; reload or Start Again clears it.
+- Any six-digit OTP works, including `123456`, `000000`, and `987654`. Mobile numbers accept any 10 digits, Aadhaar any 12 digits, and pincodes any 6 digits. PAN accepts any 10 characters. Other required text fields accept any nonempty text, including email and dates; no server verification or strict format checks apply.
+- Identity, nominee, employment, and card-name fields are editable. Address summaries use the visitor's own entries. Bank statements are selected with the device's file picker; no prepared filename is inserted. PDF files up to 10 MB are accepted locally.
 
-The prepared values are defined in `prefillValues` in `dist/app.js`. The fixed OTP remains `123456` internally; there is no visible test-code notice, sample-fill menu, or demo banner.
+The application includes mobile verification, PAN, Aadhaar, identity/address, three bank-statement options, nominee and employment details, the card offer, delivery, terms, scheduling, optional camera preview, and completion. Browser Back/Forward and the previous-step menu work within the journey.
 
-The screens include mobile verification, PAN, Aadhaar, identity/address, three bank-statement choices, occupation and nominee information, employment, card offer, additional details, delivery, terms, scheduling, optional camera preview, and completion. Browser Back/Forward and the previous-step menu preserve values during the current page session.
+Application submission, OTP verification, bank sharing, scheduling, and KYC completion are frontend simulations. Form data remains in JavaScript memory and is cleared on reload. Camera preview is optional and stops when the visitor leaves the screen. Existing voice and co-browse assistance use the configured services when explicitly started; they are separate from the simulated application flow.
 
-This is intentionally a frontend demonstration with no real APIs. Entered information remains in JavaScript memory and is cleared on reload. No documents, SMS messages, bank account requests, video, audio, or application submissions are sent to a backend. Camera preview is optional, local, and stopped when the user leaves it. Bank account sharing, OTP verification, scheduling, microphone controls, and KYC completion are simulated. Tapping the statement area selects a prepared file entry without opening or uploading a real file.
+## Assets
 
-## Design fidelity and assets
+Inter typography, Acme branding, the original 56px form controls, and blue buttons retain the visual language of the Figma reference. Phone status bars and browser chrome are omitted. `dist/responsive.css` adapts the original styles to larger screens.
 
-The 430px content width, 24px margins, 56px header/fields/buttons, 8px input/button corners, Inter typography, Acme branding, and `#0050aa` buttons follow the Figma design. The simulated phone status bar, browser address bar, and home indicator are omitted.
+Local Figma sprite exports supply the original logo, welcome illustration, footer branding, and card artwork. Text, fields, navigation, and controls are real HTML. Google Fonts provides Inter and Material Symbols Rounded.
 
-`dist/assets/welcome-sprite.png` and `offer-sprite.png` contain exact exported Figma screen pixels. CSS clips only the original logo, welcome illustration, footer logo, and card artwork. All text, forms, navigation, and controls are real HTML, not screenshot overlays. Using local exported pixels avoids expiring Figma asset links; standalone original-asset downloads were unavailable.
+## Guided assistance
 
-Figma's View-seat extraction quota was reached after five detailed screens and the complete section metadata were retrieved. The remaining forms follow that metadata and the shared extracted components. Bank-provider and later KYC/completion screens use frontend approximations. A valid PAN example replaces a typo in the Figma placeholder.
+The existing integration is preserved in `dist/assistant.js`, `dist/cobrowse.js`, and `dist/vendor/`. Pressing the microphone starts the configured voice assistant and offers a co-browse session. An assistant link with `?cb=<token>` can also offer assistance. The co-browse SDK asks for consent before sharing the page's control structure. Application navigation remains usable when assistance is unavailable.
 
-Google Fonts supplies Inter and the Material Symbols Rounded glyphs named in the design. There are no application dependencies or third-party analytics. The code archive contains the frontend and its assets, with no deployment workflow, credentials, repository history, or hosting account configuration.
+The worker endpoint, agent identity/version, and vendored SDKs are unchanged. `?v=<number>` overrides the agent version, while `?cbEndpoint=http://localhost:8787` selects a local co-browse worker. No service credentials are added to the frontend.
 
-## Guided assistance (co-browse)
+Voice waits for co-browse consent and an active screen session, then for the bot's connection acknowledgement and microphone readiness. The screen-assistance indicator and End action occupy their own footer row. Cancelling, remote hangup, ending screen assistance, and leaving the page clean up both sessions; retry creates a fresh screen session. Late permission responses cannot revive a cancelled call.
 
-`@creditnirvana/cobrowse` 0.5.0 is embedded, vendored at `dist/vendor/cobrowse/cobrowse.js`
-and started from `dist/cobrowse.js`. A session only begins from a link the assistant sent
-— arriving with `?cb=<token>` prompts for consent, and nothing is transmitted until it is
-given. `init()` never throws, so the application journey runs identically with assistance
-switched off or unreachable.
+Explicit control labels and `data-cobrowse-ignore` markers are retained. Pre-offer forms use **Save and Continue** and post-offer forms use **Save and Next**, preserving the assistant's navigation cues.
 
-The assistant receives each visible control's label, role, geometry and whether it is
-filled. It never receives values, keystrokes, pixels or a DOM mirror, and it cannot type,
-click or navigate — it draws a ring around the control the customer needs next.
+## Checks
 
-`?cbEndpoint=http://localhost:8787` points the SDK at a local worker while a journey flow
-is being recorded; unset, it uses the managed endpoint.
+```bash
+node --test tests/*.test.mjs
+node --check dist/app.js
+node --check dist/assistant.js
+```
 
-Three things in this frontend exist so the assistant can address the journey at all:
-
-- every button, checkbox, switch, radio and bank-statement option carries an explicit
-  `aria-label`, because a button's own text includes its Material Symbols glyph
-  (`Get OTPkeyboard_arrow_right`);
-- `.choice input` covers its pill transparently rather than being a 1×1 `opacity: 0` box,
-  which is invisible to the page model — the delivery-address screen had no controls at
-  all in it before;
-- the header actions, the step menu and the footer carry `data-cobrowse-ignore`, so the
-  assistant never points at app chrome.
-
-The PAN caption keeps its example PAN on screen, but the field's `aria-label` is
-`PAN Number *`: the SDK redacts PAN-shaped text out of every label before it leaves the
-browser, so the printed caption reaches the assistant as asterisks.
-
-The two pre-offer forms submit with **Save and Continue** and the two post-offer forms
-with **Save and Next**. The journey shows the same nominee and employment forms twice —
-identical field names, identical labels — and one word of button copy is what tells the
-two passes apart on the wire.
+The dependency-free tests exercise rendered field constraints and journey handlers using a lightweight document fixture. They do not replace browser layout or live voice-service testing.

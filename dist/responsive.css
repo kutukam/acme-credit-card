@@ -1,0 +1,98 @@
+/* Full viewport shell. Only the journey scrolls; assistance has its own row. */
+:root { --dock-height: 89px; --gutter: clamp(20px, 4vw, 64px); }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { padding: 0; }
+.application { width: 100%; max-width: none; height: 100vh; height: 100dvh; min-height: 0; margin: 0; box-shadow: none; }
+.app-header { flex-shrink: 0; padding-left: max(var(--gutter), env(safe-area-inset-left)); padding-right: max(var(--gutter), env(safe-area-inset-right)); }
+main { flex: 1 1 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.screen, .screen:not(.welcome) { width: 100%; min-height: auto; flex: 1 0 auto; padding: 32px var(--gutter); }
+.screen-form, .screen > *, .screen-form > *, .fields > * { min-width: 0; }
+.welcome { min-height: 0; }
+.welcome-art { max-width: 420px; align-self: center; margin-top: 32px; }
+.welcome-form { margin-top: 32px; }
+.row { flex-wrap: wrap; }
+.row > * { flex: 1 1 140px; }
+.choice.two { flex: 1 1 140px; }
+.identity-panel { padding: 24px; border-radius: 12px; }
+.identity-panel .row > * { flex-basis: 200px; }
+.details-form .bottom-action { padding-top: 24px; }
+.application-id { flex-wrap: wrap; }
+.loading-screen, .success-screen { min-height: 0; }
+.camera-screen { flex: 1 0 auto; min-height: 500px; }
+.camera-empty { inset: 0 0 96px; }
+.camera-controls { flex-wrap: wrap; }
+.bank-option > span:nth-child(2), .check-label > span { min-width: 0; overflow-wrap: anywhere; }
+.body-copy, .hint, .terms-copy { overflow-wrap: anywhere; }
+
+/* The footer cannot cover a form: it is outside the scrolling main area.
+   An error gets a separate row, and the mic always owns the bottom-right cell. */
+.app-footer {
+  flex: 0 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 56px;
+  align-items: center; gap: 0 20px; position: relative; z-index: 70;
+  min-height: 89px; padding: 16px max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+  background: #fff; border-top: 1px solid #e5e9ef;
+}
+.footer-brand { grid-column: 1; grid-row: 3; display: flex; align-items: center; gap: 2px; }
+.assist__btn { grid-column: 2; grid-row: 3; justify-self: end; flex-shrink: 0; }
+.assist__error { grid-column: 1 / -1; grid-row: 2; justify-self: end; max-width: 600px; margin: 0 0 12px; overflow-wrap: anywhere; box-shadow: none; background: #fff4f4; }
+.assist__status { grid-column: 1 / -1; grid-row: 1; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding-bottom: 12px; font-size: 13px; line-height: 20px; letter-spacing: 0; color: #245b45; }
+.assist__status .text-link { min-height: 44px; padding: 10px 4px; }
+#sheet-backdrop, .bottom-sheet { bottom: var(--dock-height); }
+.bottom-sheet { padding: 16px 0 0; }
+.bottom-sheet > .sheet-panel { width: 520px; max-height: 100%; }
+#toast { bottom: calc(var(--dock-height) + 12px); }
+
+@media (min-width: 768px) {
+  .app-header { height: 72px; min-height: 72px; }
+  .screen, .screen:not(.welcome) { padding-top: 40px; padding-bottom: 40px; gap: 32px; }
+  .screen h1, .screen h1.large, .welcome h1 { font-size: 32px; line-height: 40px; }
+  .welcome { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: clamp(40px, 7vw, 120px); align-content: center; }
+  .welcome .title { grid-column: 1; grid-row: 1; }
+  .welcome-art { grid-column: 1; grid-row: 2; width: 100%; margin: 0; justify-self: center; }
+  .welcome-form { grid-column: 2; grid-row: 1 / 3; margin: 0; align-self: center; gap: 28px; }
+  .welcome-form .check-label { font-size: 14px; line-height: 22px; }
+  .screen-form { flex: 0 0 auto; gap: 24px; }
+  .screen-form > .field-wrap { width: min(100%, 640px); }
+  .bottom-action { align-items: flex-end; padding-top: 32px; }
+  .bottom-action .button, .success-screen > .button { width: min(100%, 360px); }
+  .details-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; align-content: start; }
+  .details-form .section-block, .details-form .section-block:first-child { padding: 24px; border: 1px solid #e2e7ee; border-radius: 12px; background: #fff; }
+  .details-form .bottom-action { grid-column: 1 / -1; margin-top: 0; }
+  [data-form="identity"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  [data-form="identity"] .identity-panel { grid-column: 1; grid-row: 1 / span 2; }
+  [data-form="identity"] .switch-label, [data-form="identity"] .address-extra { grid-column: 2; }
+  [data-form="identity"] .bottom-action { grid-column: 1 / -1; }
+  .bank-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .bank-option { min-height: 160px; padding: 24px; }
+  .bank-option small { font-size: 14px; line-height: 22px; }
+  [data-form="bank-aa"] > .fields, [data-form="bank-net"] > .fields, [data-form="bank-upload"] > .fields { width: min(100%, 720px); }
+  [data-form="delivery"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-form="delivery"] .bottom-action { grid-column: 1 / -1; }
+  .offer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-content: start; align-items: start; }
+  .offer .title { grid-column: 1 / -1; }
+  .offer .card-art { grid-column: 1; }
+  .offer > div:not(.title), .offer > .body-copy { grid-column: 1; }
+  .offer .features { grid-column: 2 !important; grid-row: 2 / span 3; padding: 28px; background: #fff; border: 1px solid #e2e7ee; border-radius: 12px; gap: 28px; }
+  .offer > form { grid-column: 1 / -1; align-items: flex-end; }
+  .offer .button { width: min(100%, 360px); }
+  .terms-copy { columns: 2; column-gap: 48px; }
+  .terms-screen > form .button { width: min(100%, 360px); align-self: flex-end; }
+  [data-screen="kyc"] .screen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; align-items: start; }
+  [data-screen="kyc"] .title { grid-column: 1 / -1; }
+  [data-screen="kyc"] .application-id { grid-column: 1; }
+  [data-screen="kyc"] .kyc-box { grid-column: 2; grid-row: 2 / span 2; }
+  [data-screen="kyc"] .screen > .fields { grid-column: 1; }
+  .bottom-sheet { justify-content: center; padding: 24px; }
+  .bottom-sheet > .sheet-panel { border-radius: 16px; }
+}
+
+@media (min-width: 1200px) {
+  .details-form:not([data-form="professional"]):not([data-form="employment"]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .bank-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .welcome-art { max-width: 500px; }
+}
+
+@media (max-width: 767px) {
+  .bottom-sheet { justify-content: flex-end; }
+  .bottom-sheet > .sheet-panel { width: 100%; border-radius: 16px 16px 0 0; }
+}
