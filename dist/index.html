@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<meta name="description" content="Apply for an Acme credit card with the simple, step-by-step Perfios journey.">
+<title>Credit Card Application | Acme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Rounded:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
+<script type="module" src="./cobrowse.js"></script>
+</head>
+<body>
+<div class="application" id="application">
+<header class="app-header">
+<a href="#welcome" class="acme-logo" aria-label="Acme home"><img src="./assets/welcome-sprite.png" alt="Acme" width="430" height="932"></a>
+<div class="header-actions" data-cobrowse-ignore>
+<button class="icon-button" type="button" data-action="help" aria-label="Help"><span class="symbol" aria-hidden="true">help</span></button>
+<button class="icon-button" type="button" data-action="menu" aria-label="More options" aria-haspopup="menu" aria-expanded="false"><span class="symbol" aria-hidden="true">more_vert</span></button>
+</div>
+<div id="app-menu" class="app-menu" role="menu" hidden data-cobrowse-ignore>
+<button role="menuitem" data-action="back">Previous step</button>
+<button role="menuitem" data-action="restart">Start again</button>
+</div>
+</header>
+<main id="main" tabindex="-1"></main>
+<footer class="app-footer" data-cobrowse-ignore><span>Powered by</span><span class="perfios-logo"><img src="./assets/welcome-sprite.png" alt="Perfios" width="430" height="932"></span></footer>
+</div>
+<dialog id="dialog" class="bottom-sheet" aria-labelledby="dialog-title"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="no-script">Please enable JavaScript to use the credit card application.</p></noscript>
+</body></html>
