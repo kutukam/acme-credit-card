@@ -6,6 +6,7 @@ const main = document.querySelector('#main');
 const app = document.querySelector('#application');
 const dialog = document.querySelector('#dialog');
 const menu = document.querySelector('#app-menu');
+const backdrop = document.querySelector('#sheet-backdrop');
 const data = { delivery: 'Residence Address', name: 'Vikas Kumar' };
 let current = 'welcome';
 let transitionTimer;
@@ -249,7 +250,7 @@ function toast(text) {
 
 function sheet(title, html) {
   dialog.innerHTML = `<div class="sheet-top"><button type="button" class="icon-button" data-action="close-dialog" aria-label="Close">${icon('close')}</button></div><h2 id="dialog-title">${title}</h2>${html}`;
-  if (!dialog.open) dialog.showModal();
+  if (!dialog.open) { backdrop.hidden = false; dialog.show(); }
   dialog.querySelectorAll('form').forEach(validate);
 }
 
@@ -411,8 +412,11 @@ document.addEventListener('click', async event => {
   }
 });
 
+dialog.addEventListener('close', () => { backdrop.hidden = true; });
+backdrop.addEventListener('click', () => dialog.close());
+
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape') closeMenu();
+  if (event.key === 'Escape') { closeMenu(); if (dialog.open) dialog.close(); }
   if (!menu.hidden && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
     event.preventDefault();
     const items = [...menu.querySelectorAll('button')];
