@@ -7,7 +7,7 @@ const app = document.querySelector('#application');
 const dialog = document.querySelector('#dialog');
 const menu = document.querySelector('#app-menu');
 const backdrop = document.querySelector('#sheet-backdrop');
-const data = { delivery: 'Residence Address', name: 'Vikas Kumar' };
+const data = {};
 let current = 'welcome';
 let transitionTimer;
 let toastTimer;
@@ -24,7 +24,7 @@ const heading = (title, subtitle = '', large = false) => `<div class="title"><h1
 const button = (label = 'Next', action = '', options = {}) => `<button class="button ${options.className || ''}" type="${action ? 'button' : 'submit'}" ${action ? `data-action="${action}"` : 'data-submit'} aria-label="${escape(options.aria || plain(label))}" ${options.disabled ? 'disabled' : ''}>${label}${options.arrow === false ? '' : icon('keyboard_arrow_right')}</button>`;
 const bottom = (label = 'Next', action = '', options = {}) => `<div class="bottom-action">${button(label, action, options)}</div>`;
 const field = (name, label, options = {}) => {
-  const value = data[name] ?? options.value ?? '';
+  const value = data[name] ?? '';
   return `<div class="field-wrap ${options.focus ? 'focus-default' : ''}"><label class="field">
     <input name="${name}" aria-label="${escape(options.aria || plain(label))}" aria-describedby="error-${name}" type="${options.type || 'text'}" value="${escape(value)}" placeholder=" " ${options.required ? 'required' : ''} ${options.max ? `maxlength="${options.max}"` : ''} ${options.pattern ? `pattern="${options.pattern}"` : ''} ${options.inputmode ? `inputmode="${options.inputmode}"` : ''} ${options.readonly ? 'readonly' : ''} ${options.autocomplete ? `autocomplete="${options.autocomplete}"` : 'autocomplete="off"'} class="${options.plain ? 'plain' : ''} ${options.uppercase ? 'uppercase' : ''}" ${options.min ? `min="${options.min}"` : ''} ${options.dateMax ? `max="${options.dateMax}"` : ''}>
     <span>${label}</span></label><span id="error-${name}" class="field-error" aria-live="polite"></span></div>`;
@@ -34,7 +34,6 @@ const check = (name, text, required = false, aria = '') => `<label class="check-
 const toggle = (name, text, aria = '') => `<label class="switch-label"><input type="checkbox" role="switch" name="${name}" aria-label="${escape(aria || plain(text))}" ${data[name] ? 'checked' : ''}><span>${text}</span></label>`;
 const choice = (name, value, label = value, showRadio = true) => `<label class="choice ${showRadio ? 'two' : 'names'}"><input type="radio" name="${name}" value="${escape(value)}" aria-label="${escape(plain(label))}" ${data[name] === value ? 'checked' : ''} required>${showRadio ? '<span class="radio-mark" aria-hidden="true"></span>' : ''}<span>${label}</span></label>`;
 const cardArt = () => '<figure class="card-art"><img src="./assets/offer-sprite.png" alt="YES Prosperity Rewards Plus RuPay Platinum credit card" width="430" height="996"></figure>';
-const location = (city = 'Bengaluru', state = 'Karnataka') => `<div class="read-location"><div><small>City *</small><p>${escape(city)}</p></div><div><small>State *</small><p>${escape(state)}</p></div></div>`;
 const appId = () => `<div class="application-id"><span>Application Id:</span><strong>ACME-000002</strong><button class="icon-button" type="button" data-action="copy" aria-label="Copy application ID">${icon('content_copy')}</button></div>`;
 
 function welcome() {
@@ -42,7 +41,7 @@ function welcome() {
     ${heading('Get the best credit cards!', 'Apply for Credit card here')}
     <figure class="welcome-art"><img src="./assets/welcome-sprite.png" alt="An illustrated person carrying colourful credit cards" width="430" height="932"></figure>
     <form class="welcome-form" data-form="welcome" novalidate>
-      ${field('mobile', 'Mobile Number', { type: 'tel', inputmode: 'numeric', max: 10, required: true, pattern: '[6-9][0-9]{9}', plain: true, focus: true, autocomplete: 'tel-national' })}
+      ${field('mobile', 'Mobile Number', { type: 'tel', inputmode: 'numeric', max: 10, required: true, pattern: '[0-9]{10}', plain: true, focus: true })}
       ${check('mitc', 'I have read and accepted <button type="button" class="text-link" data-action="mitc" aria-label="Read the Most Important Terms and Conditions">Most Important Terms and Conditions (MITC)</button>', true, 'I accept the Most Important Terms and Conditions')}
       ${button('Get OTP', '', { disabled: true })}
     </form>
@@ -51,23 +50,23 @@ function welcome() {
 
 function pan() {
   return `<section class="screen" data-design-node="6031:32657">${heading('Enter Your PAN', 'Please share your PAN number to continue')}
-    <form class="screen-form" data-form="pan" novalidate>${field('pan', 'PAN (Eg. KBGTS9812M) *', { aria: 'PAN Number *', required: true, max: 10, pattern: '[A-Z]{5}[0-9]{4}[A-Z]', uppercase: true, focus: true, plain: true })}${bottom('Next', '', { disabled: true })}</form></section>`;
+    <form class="screen-form" data-form="pan" novalidate>${field('pan', 'PAN Number *', { required: true, max: 10, pattern: '.{10}', focus: true, plain: true })}${bottom('Next', '', { disabled: true })}</form></section>`;
 }
 
 function aadhaar() {
   return `<section class="screen" data-design-node="6031:32675">${heading('Enter Your Aadhaar', 'Please share your Aadhaar number to continue')}
-    <form class="screen-form" data-form="aadhaar" novalidate>${field('aadhaar', 'Aadhaar Number *', { required: true, type: 'tel', inputmode: 'numeric', max: 12, pattern: '[2-9][0-9]{11}', focus: true, plain: true })}${bottom('Next', '', { disabled: true })}</form></section>`;
+    <form class="screen-form" data-form="aadhaar" novalidate>${field('aadhaar', 'Aadhaar Number *', { required: true, type: 'tel', inputmode: 'numeric', max: 12, pattern: '[0-9]{12}', focus: true, plain: true })}${bottom('Next', '', { disabled: true })}</form></section>`;
 }
 
 function identity() {
   return `<section class="screen" data-design-node="6031:32751"><form class="screen-form" data-form="identity" novalidate>
-    <div class="identity-panel"><h2>Details from Aadhaar &amp; PAN</h2>
-      <div class="row">${field('name', 'Full Name', { readonly: true, value: 'Vikas Kumar' })}${field('identityDob', 'Date of Birth', { readonly: true, value: '15/08/1995' })}</div>
-      <label class="field"><textarea name="identityAddress" aria-label="Address" readonly placeholder=" ">${escape(data.identityAddress || '102 - A Block, Shipra Sun City, Sector 22, Noida, Uttar Pradesh – 201 301')}</textarea><span>Address</span></label>
+    <div class="identity-panel"><h2>Your details</h2>
+      <div class="row">${field('name', 'Full Name *', { required: true })}${field('identityDob', 'Date of Birth *', { required: true })}</div>
+      <label class="field"><textarea name="identityAddress" aria-label="Address *" required autocomplete="off" placeholder=" ">${escape(data.identityAddress || '')}</textarea><span>Address *</span></label>
     </div>
     ${toggle('differentAddress', 'My Current Address is different from Aadhaar')}
     <div class="address-extra" id="address-extra" ${data.differentAddress ? '' : 'hidden'}>
-      ${field('address1', 'Address Line 1 *', { required: Boolean(data.differentAddress) })}${field('address2', 'Address Line 2')}${field('pincode', 'Pincode *', { required: Boolean(data.differentAddress), inputmode: 'numeric', max: 6, pattern: '[1-9][0-9]{5}' })}
+      ${field('address1', 'Address Line 1 *', { required: Boolean(data.differentAddress) })}${field('address2', 'Address Line 2')}${field('pincode', 'Pincode *', { required: Boolean(data.differentAddress), inputmode: 'numeric', max: 6, pattern: '[0-9]{6}' })}
       <div class="row">${field('city', 'City *', { required: Boolean(data.differentAddress) })}${field('state', 'State *', { required: Boolean(data.differentAddress) })}</div>
     </div>${bottom('Next')}</form></section>`;
 }
@@ -83,8 +82,8 @@ function bankAA() {
   return `<section class="screen">${heading('Share your bank statements', 'Securely share your account details with your consent.')}
     <div class="step-dots"><span>Verify</span><span class="active">Select accounts</span><span>Consent</span></div>
     <form class="screen-form" data-form="bank-aa" novalidate><div class="fields">
-      ${field('aaId', 'Account Aggregator ID *', { required: true, value: `${data.mobile || '8094671628'}@anumati` })}
-      <div class="bank-account">${check('shareAccount', 'Acme Bank<br><small>Savings account · XXXX 4521</small>', true, 'Acme Bank savings account')}</div>
+      ${field('aaId', 'Account Aggregator ID *', { required: true })}
+      <div class="bank-account">${check('shareAccount', 'Share my selected bank account', true)}</div>
       ${check('aaConsent', 'I consent to share my bank statements for this credit card application.', true, 'I consent to share my bank statements')}
     </div>${bottom('Approve and Continue', '', { disabled: true })}</form></section>`;
 }
@@ -101,6 +100,7 @@ function bankUpload() {
   return `<section class="screen">${heading('Upload Bank Statements', 'Please upload your bank statements in PDF format')}
     <form class="screen-form" data-form="bank-upload" novalidate><div class="fields">
       <button type="button" class="upload-area" id="upload-area" data-action="choose-statement" aria-label="Select a PDF statement">${icon('cloud_upload')}<span>Select a PDF statement</span><span class="hint">PDF files up to 10 MB</span></button>
+      <input type="file" name="statement" id="statement" accept=".pdf,application/pdf" aria-label="Bank statement PDF" hidden>
       <p id="file-status" class="hint" role="status"></p>
     </div>${bottom('Continue', '', { disabled: true })}</form></section>`;
 }
@@ -110,7 +110,7 @@ function additional(beforeOffer = false) {
     <form class="screen-form details-form" data-form="${beforeOffer ? 'qualification' : 'additional'}" novalidate>
       <div class="section-block"><h2>Select your occupation type</h2><div class="choice-grid">${choice('occupation', 'Salaried')}${choice('occupation', 'Self Employed')}</div></div>
       <div class="section-block"><h2>Nominee details</h2>
-        ${field('nominee', 'Nominee Name *', { required: true })}${field('nomineeDob', 'Date of Birth *', { required: true, type: 'date', dateMax: new Date().toISOString().slice(0, 10) })}${select('relation', 'Relationship with Nominee *', ['Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Other'])}
+        ${field('nominee', 'Nominee Name *', { required: true })}${field('nomineeDob', 'Date of Birth *', { required: true })}${select('relation', 'Relationship with Nominee *', ['Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Other'])}
         ${check('insurance', 'I am giving my consent to avail an insurance coverage and to update above nominee details in bank records', false, 'I consent to the insurance cover and nominee details')}
       </div>
       <div class="section-block"><h2>Self Declarations</h2>${toggle('political', 'I am a political exposed person')}${toggle('politicalRelative', 'I am closely related to a political exposed person')}${toggle('bankRelative', 'I am related to any director / designated employee of the bank')}</div>
@@ -122,7 +122,7 @@ function employment(beforeOffer = false) {
   return `<section class="screen" data-design-node="6031:33181">${heading(beforeOffer ? 'Professional Details' : 'Enter Employment Details', beforeOffer ? 'Please fill out the form with required details' : 'Please fill out the form with your details', !beforeOffer)}
     <form class="screen-form details-form" data-form="${beforeOffer ? 'professional' : 'employment'}" novalidate>
       <div class="section-block">${field('company', 'Company Name *', { required: true })}${field('designation', 'Designation *', { required: true, focus: true })}${field('profession', 'Nature of Profession *', { required: true })}</div>
-      <div class="section-block">${field('office1', 'Office Address Line 1 *', { required: true })}${field('office2', 'Office Address Line 2')}${field('officePin', 'Office Pincode *', { required: true, inputmode: 'numeric', max: 6, pattern: '[1-9][0-9]{5}' })}
+      <div class="section-block">${field('office1', 'Office Address Line 1 *', { required: true })}${field('office2', 'Office Address Line 2')}${field('officePin', 'Office Pincode *', { required: true, inputmode: 'numeric', max: 6, pattern: '[0-9]{6}' })}
         <div class="row">${field('officeCity', 'City *', { required: true })}${field('officeState', 'State *', { required: true })}</div>
       </div>${bottom(beforeOffer ? 'Save and Continue' : 'Save and Next', '', { disabled: true })}
     </form></section>`;
@@ -140,18 +140,18 @@ function offer() {
 function personal() {
   return `<section class="screen" data-design-node="6031:32920">${heading('Enter Additional Details', 'Please fill out the form with your details', true)}
     <form class="screen-form details-form" data-form="personal" novalidate>
-      <div class="section-block">${field('email', 'Email ID *', { required: true, type: 'email', autocomplete: 'email' })}${field('alternate', 'Alternate Mobile Number', { type: 'tel', inputmode: 'numeric', max: 10, pattern: '[6-9][0-9]{9}' })}</div>
+      <div class="section-block">${field('email', 'Email ID *', { required: true, inputmode: 'email' })}${field('alternate', 'Alternate Mobile Number', { type: 'tel', inputmode: 'numeric', max: 10, pattern: '[0-9]{10}' })}</div>
       <div class="section-block">${field('maidenName', "Mother's Maiden Name *", { required: true })}${select('maritalStatus', 'Marital Status *', ['Single', 'Married', 'Divorced', 'Widowed'])}</div>
-      <div class="section-block"><h2>How would you like your name to appear on your credit card?</h2><div class="choice-grid">${['Vikas Kumar', 'Kumar Vikas', 'Vikas K', 'V Kumar'].map(name => choice('cardName', name, name, false)).join('')}</div></div>
+      <div class="section-block"><h2>How would you like your name to appear on your credit card?</h2>${field('cardName', 'Name on credit card *', { required: true })}</div>
       ${bottom('Save and Next', '', { disabled: true })}</form></section>`;
 }
 
 function delivery() {
   const office = data.delivery === 'Office Address';
-  const address = office ? [data.office1, data.office2, data.officeCity, data.officeState, data.officePin].filter(Boolean).join(', ') : data.differentAddress ? [data.address1, data.address2, data.city, data.state, data.pincode].filter(Boolean).join(', ') : '102 - A Block, Shipra Sun City, Sector 22, Noida, Uttar Pradesh – 201 301';
+  const address = !data.delivery ? '' : office ? [data.office1, data.office2, data.officeCity, data.officeState, data.officePin].filter(Boolean).join(', ') : data.differentAddress ? [data.address1, data.address2, data.city, data.state, data.pincode].filter(Boolean).join(', ') : data.identityAddress;
   return `<section class="screen" data-design-node="6031:33129">${heading('Select Delivery Address', 'Please select address where you want us to deliver your card', true)}
     <form class="screen-form" data-form="delivery"><div class="choice-grid">${choice('delivery', 'Residence Address', 'Residence<br>Address')}${choice('delivery', 'Office Address', 'Office<br>Address')}</div>
-      <div class="fields"><p class="body-copy">Your card will be delivered at</p><p class="body-copy" id="delivery-address">${escape(address || 'Please enter your office address in the previous step.')}</p></div>
+      <div class="fields"><p class="body-copy">Your card will be delivered at</p><p class="body-copy" id="delivery-address">${escape(address || (data.delivery ? 'Please enter this address in the previous steps.' : 'Select a delivery address above.'))}</p></div>
       ${bottom('Save and Next')}</form></section>`;
 }
 
@@ -171,7 +171,7 @@ function video() {
   return `<section class="camera-screen"><video id="camera-video" autoplay playsinline muted aria-label="Your camera preview"></video>
     <div class="camera-empty" id="camera-empty">${icon('videocam')}<h1>Video KYC</h1><p>Keep your face clearly visible and your documents ready.</p>${button('Enable Camera Preview', 'enable-camera', { arrow: false })}<p class="hint" id="camera-status">Allow camera access to see your preview.</p></div>
     <div class="camera-overlay"><span>Video KYC</span></div>
-    <div class="camera-controls"><button class="round-button" data-action="toggle-mic" aria-label="Mute microphone" aria-pressed="true">${icon('mic_off')}</button><button class="round-button" data-action="toggle-camera" aria-label="Toggle camera" aria-pressed="false">${icon('videocam')}</button><button class="button" data-action="finish-kyc" aria-label="Continue">Continue</button></div></section>`;
+    <div class="camera-controls"><button class="round-button" data-action="toggle-camera" aria-label="Toggle camera" aria-pressed="false">${icon('videocam')}</button><button class="button" data-action="finish-kyc" aria-label="Continue">Continue</button></div></section>`;
 }
 
 function success() {
@@ -189,7 +189,7 @@ function render(route = current) {
   if (current === 'video' && route !== 'video') stopCamera();
   current = Object.hasOwn(screens, route) ? route : 'welcome';
   app.classList.toggle('is-welcome', current === 'welcome');
-  document.querySelector('.app-footer').hidden = current === 'video';
+  app.dataset.screen = current;
   main.innerHTML = screens[current]();
   closeMenu();
   document.title = `${main.querySelector('h1')?.textContent || 'Credit Card Application'} | Acme`;
@@ -197,7 +197,7 @@ function render(route = current) {
   if (current === 'identity') updateAddressFields();
   if (current === 'bank-upload') { fileValid = false; validate(main.querySelector('form')); }
   main.focus({ preventScroll: true });
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  main.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 function go(route) {
@@ -264,33 +264,6 @@ function showOTP(next) {
   dialog.querySelector('input[name=otp]')?.focus();
 }
 
-const prefillValues = { mobile: '8094671628', otp: '123456', pan: 'KBGTS9812M', aadhaar: '432143214321', name: 'Vikas Kumar', identityDob: '15/08/1995', identityAddress: '102 - A Block, Shipra Sun City, Sector 22, Noida, Uttar Pradesh – 201 301', address1: '102 - A Block, Shipra Sun City', address2: 'Sector 22', pincode: '201301', city: 'Noida', state: 'Uttar Pradesh', aaId: '8094671628@anumati', bankName: 'Acme Bank', occupation: 'Salaried', nominee: 'Priya Kumar', nomineeDob: '1996-05-21', relation: 'Spouse', company: 'Perfios Software Solutions', designation: 'Product Designer', profession: 'Software Services', office1: '540, 100 Feet Rd, Krishna Reddy Layout', office2: 'Koramangala, 5th block', officePin: '560035', officeCity: 'Bengaluru', officeState: 'Karnataka', email: 'vikas.kumar@example.com', alternate: '8094671629', maidenName: 'Sharma', maritalStatus: 'Married', cardName: 'Vikas Kumar', delivery: 'Residence Address', scheduleDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10), scheduleTime: '10:00 AM' };
-
-// Empty fields fill on an intentional tap; existing edits remain untouched.
-function prefillField(target) {
-  const input = target.matches?.('input, select, textarea') ? target : target.closest?.('.field')?.querySelector('input, select, textarea');
-  if (!input || input.disabled || input.readOnly || ['checkbox', 'radio', 'file'].includes(input.type) || input.value.trim() || !Object.hasOwn(prefillValues, input.name)) return null;
-  input.value = prefillValues[input.name];
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
-  return input;
-}
-
-document.addEventListener('pointerdown', event => {
-  const input = prefillField(event.target);
-  if (input && (input.tagName === 'SELECT' || input.type === 'date')) {
-    event.preventDefault();
-    input.focus({ preventScroll: true });
-  }
-});
-
-document.addEventListener('click', event => { prefillField(event.target); });
-document.addEventListener('keydown', event => {
-  if (event.key !== 'Enter' && event.key !== ' ') return;
-  const input = prefillField(event.target);
-  if (input) event.preventDefault();
-});
-
 function closeMenu() {
   menu.hidden = true;
   document.querySelector('[data-action=menu]').setAttribute('aria-expanded', 'false');
@@ -319,7 +292,6 @@ function stopCamera() {
 
 document.addEventListener('input', event => {
   const input = event.target;
-  if (input.name === 'pan') input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (['mobile', 'aadhaar', 'alternate', 'pincode', 'officePin', 'otp'].includes(input.name)) input.value = input.value.replace(/[^0-9]/g, '');
   const form = input.closest('form');
   if (!form) return;
@@ -350,7 +322,7 @@ document.addEventListener('focusout', event => {
   if (!input.name || !input.value || !input.validity || input.validity.valid) return;
   const error = document.querySelector(`#error-${input.name}`);
   if (!error) return;
-  const messages = { mobile: 'Enter a valid 10-digit mobile number.', alternate: 'Enter a valid 10-digit mobile number.', pan: 'Enter 5 letters, 4 numbers, and 1 letter (e.g. KBGTS9812M).', aadhaar: 'Enter a 12-digit Aadhaar number.', pincode: 'Enter a valid 6-digit pincode.', officePin: 'Enter a valid 6-digit pincode.', email: 'Enter a valid email address.', nomineeDob: 'Select a valid date of birth.' };
+  const messages = { mobile: 'Enter 10 digits.', alternate: 'Enter 10 digits.', pan: 'Enter 10 characters.', aadhaar: 'Enter 12 digits.', pincode: 'Enter 6 digits.', officePin: 'Enter 6 digits.', otp: 'Enter 6 digits.' };
   error.textContent = messages[input.name] || 'Please enter a valid value.';
   input.closest('.field-wrap')?.classList.add('is-invalid');
   input.setAttribute('aria-invalid', 'true');
@@ -365,7 +337,6 @@ document.addEventListener('submit', event => {
   switch (form.dataset.form) {
     case 'welcome': showOTP('pan'); break;
     case 'otp':
-      if (data.otp !== prefillValues.otp) { document.querySelector('#otp-error').textContent = 'Incorrect OTP. Please try again.'; return; }
       closeSheet(); go(otpNext); break;
     case 'pan': go('aadhaar'); break;
     case 'aadhaar': showOTP('identity'); break;
@@ -400,14 +371,13 @@ document.addEventListener('click', async event => {
     case 'back': go(current.startsWith('bank-') ? 'bank' : journey[Math.max(0, journey.indexOf(current) - 1)]); break;
     case 'restart':
       sheet('Start a new application?', `<p class="subtitle">This will clear the details entered in this application.</p>${button('Start Again', 'confirm-restart', { arrow: false })}${button('Keep My Progress', 'close-dialog', { className: 'ghost', arrow: false })}`); break;
-    case 'confirm-restart': for (const key of Object.keys(data)) delete data[key]; Object.assign(data, { name: 'Vikas Kumar', delivery: 'Residence Address' }); stopCamera(); fileValid = false; closeSheet(); go('welcome'); break;
+    case 'confirm-restart': for (const key of Object.keys(data)) delete data[key]; stopCamera(); fileValid = false; closeSheet(); go('welcome'); break;
     case 'resend': data.otp = ''; dialog.querySelector('input[name=otp]').value = ''; dialog.querySelector('#otp-error').textContent = ''; validate(dialog.querySelector('form')); toast('OTP resent.'); break;
     case 'bank-aa': case 'bank-net': case 'bank-upload': case 'video': case 'complete': go(action); break;
-    case 'choose-statement': fileValid = true; document.querySelector('#file-status').textContent = 'bank-statement.pdf · 240 KB · ready'; validate(main.querySelector('form')); break;
+    case 'choose-statement': document.querySelector('#statement').click(); break;
     case 'copy': try { await navigator.clipboard.writeText('ACME-000002'); toast('Application ID copied.'); } catch { toast('Application ID: ACME-000002'); } break;
-    case 'schedule': sheet('Schedule Video KYC', `<p class="subtitle">Choose a convenient date and time.</p><form data-form="schedule" novalidate><div class="fields">${field('scheduleDate', 'Date *', { type: 'date', required: true, min: new Date().toISOString().slice(0, 10) })}${select('scheduleTime', 'Time *', ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'])}</div>${button('Confirm Schedule', '', { disabled: true })}</form>`); break;
+    case 'schedule': sheet('Schedule Video KYC', `<p class="subtitle">Choose a convenient date and time.</p><form data-form="schedule" novalidate><div class="fields">${field('scheduleDate', 'Date *', { required: true })}${select('scheduleTime', 'Time *', ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'])}</div>${button('Confirm Schedule', '', { disabled: true })}</form>`); break;
     case 'enable-camera': await enableCamera(); break;
-    case 'toggle-mic': { const muted = element.getAttribute('aria-pressed') !== 'true'; element.setAttribute('aria-pressed', String(muted)); element.innerHTML = icon(muted ? 'mic_off' : 'mic'); } break;
     case 'toggle-camera':
       if (!mediaStream) { await enableCamera(); break; }
       { const track = mediaStream.getVideoTracks()[0]; track.enabled = !track.enabled; element.setAttribute('aria-pressed', String(!track.enabled)); element.innerHTML = icon(track.enabled ? 'videocam' : 'videocam_off'); } break;
