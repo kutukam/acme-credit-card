@@ -24,7 +24,7 @@
  */
 import CoBrowse from './vendor/cobrowse/cobrowse.js';
 
-const WORKER = 'https://cobrowse-do.harshkhandelwal8553.workers.dev';
+const WORKER = 'https://cobrowse.unikernel.ai';
 const SITE = 'acme-credit-card';
 
 const params = new URLSearchParams(window.location.search);
