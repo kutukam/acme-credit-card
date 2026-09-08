@@ -21,7 +21,9 @@ main{flex:1;display:flex;flex-direction:column;outline:none;min-height:0}.screen
 @keyframes assist-bar{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
 .assist__error{max-width:230px;margin:0;padding:8px 10px;background:#fff;border-radius:8px;font-size:12px;line-height:16px;color:#8a2b2b;box-shadow:0 6px 20px rgba(16,40,74,.18)}
 .assist__error[hidden]{display:none}
+body:has(.camera-screen) .assist{bottom:120px}
 @media (max-width:639px){.assist{right:14px;bottom:18px}.assist__btn{width:52px;height:52px}}
+@media (max-width:639px){body:has(.camera-screen) .assist{bottom:112px}}
 #cn-cobrowse-root{z-index:2147483647!important}
 #sheet-backdrop{position:fixed;inset:0;background:#0006;z-index:50}
 #sheet-backdrop[hidden]{display:none}
