@@ -24,7 +24,7 @@ const AGENT = {
   orgId: '019ec301-92a0-7a28-846c-b1afafcdf30d',
   workspaceId: '019ec301-92a7-7f33-81f2-14326ae2265e',
   appId: 'Credit-Card-304ce84f-1917',
-  version: 2,
+  version: 3,
 };
 
 /* Committing on the dashboard mints a NEW version, and a pin left behind keeps
