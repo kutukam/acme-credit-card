@@ -225,7 +225,24 @@ async function start(micPrimed) {
     }, () => {});
     // waitForConnect() in the vendored SDK can resolve for a socket that is
     // still connecting. Require the server acknowledgement AND ready audio.
-    await deadline(Promise.all([started, acknowledged.promise, microphoneReady.promise]), 20000, 'Connection timed out. Allow microphone access, then try again.');
+    /*
+     * TWO WAYS TO LEARN THE SAME FACT.
+     *
+     * This used to accept only the status callback reporting connected/listening/
+     * speaking. On a laptop that event always arrives; on mobile it does not, and the
+     * page then sat here until the 20s deadline and reported a failure for a call that
+     * had actually connected. The personal loan journey never had the bug because it
+     * asks the SDK directly (waitForConnect) instead of waiting to be told.
+     *
+     * So take whichever answers first. The event stays primary; polling is the floor.
+     */
+    const polled = (typeof candidate.waitForConnect === 'function')
+      ? Promise.resolve().then(() => candidate.waitForConnect(15)).then(
+          (ok) => { if (!ok) throw new Error('not_connected'); }, () => { throw new Error('not_connected'); })
+      : new Promise(() => {});
+    polled.catch(() => {});
+    const live = Promise.any ? Promise.any([acknowledged.promise, polled]) : acknowledged.promise;
+    await deadline(Promise.all([started, live, microphoneReady.promise]), 20000, 'Could not reach the assistant. Tap the microphone to try again.');
     if (run !== attempt) return;
     state = 'live';
     paint();
