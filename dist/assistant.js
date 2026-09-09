@@ -95,12 +95,43 @@ async function stop(message = '') {
   ]);
 }
 
-async function start() {
+/**
+ * ASK FOR THE MICROPHONE INSIDE THE TAP.
+ *
+ * getUserMedia only prompts while the tap that triggered it still counts as user
+ * activation. Everything this button does before the voice SDK starts — opening the
+ * co-browse session, waiting for the consent dialog, fetching a Sarvam token — is
+ * asynchronous, and by the time the SDK finally asks, the activation is long gone.
+ * Desktop does not notice, because the first grant is remembered per origin and never
+ * asked for again. A phone that has never granted it gets NO PROMPT AT ALL and a bare
+ * rejection, which reads as "it never even asked me for the mic".
+ *
+ * So ask here, synchronously, while the tap is still live. The tracks are stopped
+ * immediately — this is only to turn the permission into a decision. Once granted, the
+ * SDK's own call later needs no prompt.
+ */
+function primeMicrophone() {
+  try {
+    const ask = navigator.mediaDevices?.getUserMedia?.({ audio: true });
+    if (!ask) return Promise.resolve(false);
+    return ask.then((stream) => {
+      stream.getTracks().forEach((t) => { try { t.stop(); } catch { /* already stopped */ } });
+      return true;
+    }).catch(() => false);
+  } catch {
+    return Promise.resolve(false);
+  }
+}
+
+async function start(micPrimed) {
   const run = ++attempt;
   const abort = controller = new AbortController();
   state = 'connecting';
   paint();
   try {
+    // Let the permission settle first: the SDK's own getUserMedia comes several
+    // awaits later, far outside the tap that could have prompted for it.
+    if (micPrimed) await micPrimed;
     const cobrowseCode = await ensureAssistance();
     if (run !== attempt) return;
     const response = await deadline(fetch(`${WORKER}/api/extension/session`, {
@@ -180,7 +211,8 @@ async function start() {
 }
 
 button.addEventListener('click', () => {
-  if (state === 'idle') void start(); else void stop();
+  // Prime it in the gesture, then start. See primeMicrophone.
+  if (state === 'idle') { const mic = primeMicrophone(); void start(mic); } else void stop();
 });
 onAssistanceEnded(reason => {
   if (state !== 'idle') void stop(reason === 'ended_by_user' || reason === 'completed' ? '' : 'Screen assistance ended. Tap the microphone to reconnect.');
