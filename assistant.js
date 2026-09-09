@@ -116,8 +116,8 @@ function primeMicrophone() {
     if (!ask) return Promise.resolve(false);
     return ask.then((stream) => {
       stream.getTracks().forEach((t) => { try { t.stop(); } catch { /* already stopped */ } });
-      return true;
-    }).catch(() => false);
+      return 'granted';
+    }).catch((e) => (e && e.name === 'NotAllowedError') ? 'denied' : 'unavailable');
   } catch {
     return Promise.resolve(false);
   }
@@ -131,7 +131,12 @@ async function start(micPrimed) {
   try {
     // Let the permission settle first: the SDK's own getUserMedia comes several
     // awaits later, far outside the tap that could have prompted for it.
-    if (micPrimed) await micPrimed;
+    if (micPrimed && (await micPrimed) === 'denied') {
+      // A blocked permission cannot be prompted for again from here. Say where the
+      // switch is rather than asking them to tap again forever.
+      await stop("Microphone is blocked for this site. In Chrome tap the icon left of the address bar, turn Microphone on, then tap again.");
+      return;
+    }
     const cobrowseCode = await ensureAssistance();
     if (run !== attempt) return;
     const response = await deadline(fetch(`${WORKER}/api/extension/session`, {
