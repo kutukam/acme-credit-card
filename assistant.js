@@ -110,6 +110,29 @@ async function stop(message = '') {
  * immediately — this is only to turn the permission into a decision. Once granted, the
  * SDK's own call later needs no prompt.
  */
+let __audioUnlock = null;
+  /**
+   * UNLOCK AUDIO IN THE SAME TAP.
+   *
+   * Chrome on Android starts every AudioContext suspended until the page has had a user
+   * gesture, and it does NOT resume one created later in an async chain. The voice SDK
+   * builds its context several awaits after the tap, so on Chrome it comes up suspended:
+   * the socket connects, the agent is live, and no audio moves in either direction. It
+   * presents as "the microphone does not respond" even though permission was granted.
+   * Safari is laxer here, which is why the same page works there.
+   *
+   * Creating and resuming one context inside the tap marks the document as unlocked, so
+   * the SDK's own context starts running. It is closed on stop.
+   */
+function unlockAudio() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!__audioUnlock) __audioUnlock = new Ctx();
+      if (__audioUnlock.state === 'suspended') __audioUnlock.resume();
+    } catch (e) { /* audio stays locked; the SDK will report it */ }
+  }
+
 function primeMicrophone() {
   try {
     const ask = navigator.mediaDevices?.getUserMedia?.({ audio: true });
@@ -217,7 +240,7 @@ async function start(micPrimed) {
 
 button.addEventListener('click', () => {
   // Prime it in the gesture, then start. See primeMicrophone.
-  if (state === 'idle') { const mic = primeMicrophone(); void start(mic); } else void stop();
+  if (state === 'idle') { unlockAudio(); const mic = primeMicrophone(); void start(mic); } else void stop();
 });
 onAssistanceEnded(reason => {
   if (state !== 'idle') void stop(reason === 'ended_by_user' || reason === 'completed' ? '' : 'Screen assistance ended. Tap the microphone to reconnect.');
